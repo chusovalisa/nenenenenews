@@ -1,0 +1,194 @@
+{% extends "base.html" %}
+{% load tz %}
+
+{% block title %}{{ portfolio.name }}{% endblock %}
+
+{% block content %}
+    <section class="card hero">
+        <p class="kicker">Portfolio Digest</p>
+        <h1>{{ portfolio.name }}</h1>
+        <p>Добавьте позицию и запустите анализ. Система покажет только релевантные новости по активам портфеля, короткий вывод и подтверждающие фрагменты.</p>
+        <div class="meta">
+            <span class="badge">{{ portfolio.base_currency }}</span>
+            <span class="badge">{{ portfolio.risk_profile }}</span>
+            <span class="badge">Позиций: {{ portfolio.positions.count }}</span>
+        </div>
+        <div class="hero-actions">
+            <form
+                action="{% url 'ui-build-digest' portfolio.id %}"
+                method="post"
+                class="inline-form"
+                data-loading-title="Формируем дайджест по портфелю"
+                data-loading-text="Система подбирает новости по тикерам, строит сводки через LLM и выполняет фактчекинг. Это может занять 10–60 секунд."
+            >
+                {% csrf_token %}
+                <label>
+                    Количество новостей
+                    <input type="number" name="top_k" min="1" max="20" value="5">
+                </label>
+                <label>
+                    За сколько дней брать новости
+                    <input type="number" name="lookback_days" min="1" max="365" value="{{ latest_digest.lookback_days|default:1 }}">
+                </label>
+                <button class="button-warm" type="submit">Запустить анализ</button>
+            </form>
+        </div>
+        <div class="form-hint">Анализ выполняется синхронно. После нажатия появится экран загрузки, затем страница обновится с результатами.</div>
+    </section>
+
+    <section class="layout-main" style="margin-top: 20px;">
+        <article class="card">
+            <div class="section-head">
+                <div>
+                    <p class="kicker">Positions</p>
+                    <h2>Состав портфеля</h2>
+                </div>
+            </div>
+            {% if portfolio.positions.all %}
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                        <tr>
+                            <th>Тикер</th>
+                            <th>Действия</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for position in portfolio.positions.all %}
+                            <tr>
+                                <td>{{ position.asset.symbol }}</td>
+                                <td>
+                                    <div class="toolbar">
+                                        <form action="{% url 'ui-position-delete' portfolio.id position.id %}" method="post" onsubmit="return confirm('Удалить позицию {{ position.asset.symbol }}?');">
+                                            {% csrf_token %}
+                                            <button type="submit">Удалить</button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="empty">В портфеле пока нет позиций.</div>
+            {% endif %}
+        </article>
+        <article class="card sticky-panel">
+            <p class="kicker">Actions</p>
+            <h2>Добавьте данные</h2>
+            <div class="surface compact-card">
+                <h3>Новый актив</h3>
+                <form action="{% url 'ui-asset-create' %}" method="post" class="form-grid">
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{% url 'ui-portfolio-detail' portfolio.id %}">
+                    <input type="hidden" name="portfolio_id" value="{{ portfolio.id }}">
+                    {% for field in asset_form %}
+                        <label class="{% if field.name == 'name' or field.name == 'sector' or field.name == 'exchange' %}field-span-2{% endif %}">
+                            {{ field.label }}
+                            {{ field }}
+                            {% if field.help_text %}
+                                <span>{{ field.help_text }}</span>
+                            {% endif %}
+                            {% for error in field.errors %}
+                                <span style="color: var(--red);">{{ error }}</span>
+                            {% endfor %}
+                        </label>
+                    {% endfor %}
+                    <div class="field-span-2">
+                        <button class="button-primary" type="submit">Добавить в портфель</button>
+                    </div>
+                </form>
+            </div>
+        </article>
+    </section>
+
+    <section class="card" style="margin-top: 20px;">
+        <div class="section-head">
+            <div>
+                <p class="kicker">Results</p>
+                <h2>Последний дайджест</h2>
+            </div>
+            {% if latest_digest_job %}
+                <span class="badge">Сформирован: {{ latest_digest_job.created_at|localtime|date:"d.m.Y H:i" }}</span>
+            {% endif %}
+        </div>
+        {% if latest_digest %}
+            <div class="digest-grid">
+                {% for item in latest_digest_items %}
+                    <article class="digest-card">
+                        <div class="section-head">
+                            <div>
+                                <h3><a href="{{ item.url }}" target="_blank" rel="noreferrer">{{ item.title }}</a></h3>
+                                <a class="mini-note" href="{{ item.url }}" target="_blank" rel="noreferrer">Открыть первоисточник</a>
+                                <div class="meta">
+                                    {% for symbol in item.matched_symbols %}
+                                        <span class="badge badge-ticker">{{ symbol }}</span>
+                                    {% endfor %}
+                                    {% if item.verification_status == "confirmed" %}
+                                        <span class="badge badge-green">{{ item.verification_label }}</span>
+                                    {% elif item.verification_status == "not_confirmed" %}
+                                        <span class="badge badge-red">{{ item.verification_label }}</span>
+                                    {% else %}
+                                        <span class="badge badge-amber">{{ item.verification_label }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <p><strong>Кратко:</strong> {{ item.summary }}</p>
+                        {% if item.portfolio_relevance %}
+                            <div class="meta">
+                                {% for relevance in item.portfolio_relevance %}
+                                    <span class="badge">{{ relevance.symbol }}: {{ relevance.reason }}</span>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <p><strong>Влияние на портфель:</strong> {{ item.impact_analysis }}</p>
+
+                        {% if item.claim_checks %}
+                            <div class="fact-grid">
+                                {% for check in item.claim_checks %}
+                                    <details class="fact-card">
+                                        <summary>
+                                            <strong>{{ check.claim }}</strong>
+                                            {% if check.status == "confirmed" %}
+                                                <span class="badge badge-green">Подтверждено</span>
+                                            {% elif check.status == "contradicted" %}
+                                                <span class="badge badge-red">Противоречие</span>
+                                            {% elif check.status == "not_confirmed" %}
+                                                <span class="badge badge-red">Не подтверждено</span>
+                                            {% else %}
+                                                <span class="badge badge-amber">Недостаточно данных</span>
+                                            {% endif %}
+                                        </summary>
+                                        <p class="mini-note" style="margin-top: 10px;">
+                                            Уверенность: {{ check.confidence|floatformat:2 }}
+                                        </p>
+                                        {% if check.evidence %}
+                                            <div class="evidence-list">
+                                                {% for evidence in check.evidence %}
+                                                    <a class="evidence" href="{{ evidence.url }}" target="_blank" rel="noreferrer">
+                                                        <span class="badge">{{ evidence.label }}</span>
+                                                        <span class="mini-note">score: {{ evidence.score|floatformat:2 }}</span>
+                                                        <p>{{ evidence.excerpt }}</p>
+                                                    </a>
+                                                {% endfor %}
+                                            </div>
+                                        {% else %}
+                                            <div class="empty">
+                                                Для этого утверждения не найдено достаточно сильных доказательств.
+                                                <a href="{{ item.url }}" target="_blank" rel="noreferrer">Открыть исходную новость</a>
+                                            </div>
+                                        {% endif %}
+                                    </details>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </article>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty">Дайджест еще не строился. Добавьте позицию и нажмите «Запустить анализ» в верхнем блоке.</div>
+        {% endif %}
+    </section>
+{% endblock %}

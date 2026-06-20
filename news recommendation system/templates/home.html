@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block title %}Finance News Pipeline{% endblock %}
+
+{% block content %}
+    <section class="landing-grid">
+        <article class="card hero">
+            <p class="kicker">Portfolio Intelligence</p>
+            <h1>Финансовые новости, отобранные под конкретный портфель</h1>
+            <p>
+                Приложение собирает рыночные публикации, отбирает только релевантные сигналы,
+                строит краткие сводки и показывает, на чем именно основан итоговый вывод.
+            </p>
+            <div class="hero-actions">
+                <a class="button button-primary" href="{% url 'ui-signup' %}">Открыть кабинет</a>
+                <a class="button button-link" href="{% url 'ui-login' %}">Войти</a>
+            </div>
+            <div class="editorial-list" style="margin-top: 22px;">
+                <div class="editorial-item">
+                    <strong>Подбор под портфель</strong>
+                    <div>Новости не показываются общим потоком, а фильтруются по активам пользователя.</div>
+                </div>
+                <div class="editorial-item">
+                    <strong>Сжатая аналитика</strong>
+                    <div>Для каждой релевантной публикации формируется короткий вывод и оценка влияния.</div>
+                </div>
+                <div class="editorial-item">
+                    <strong>Прозрачный фактчекинг</strong>
+                    <div>Ключевые утверждения сопровождаются статусом проверки и источниками.</div>
+                </div>
+            </div>
+        </article>
+
+        <aside class="market-board">
+            <section class="market-strip">
+                <p class="kicker">Live Workflow</p>
+                <h2 style="margin-bottom: 8px;">От сигнала к решению</h2>
+                <p>Сценарий построен вокруг одной задачи: быстро понять, какие новости действительно относятся к вашему портфелю и что в них важно.</p>
+                <div class="market-grid">
+                    <div class="market-cell">
+                        <strong>01</strong>
+                        <span>Загрузка новостей</span>
+                    </div>
+                    <div class="market-cell">
+                        <strong>02</strong>
+                        <span>Отбор по активам</span>
+                    </div>
+                    <div class="market-cell">
+                        <strong>03</strong>
+                        <span>Сводка LLM</span>
+                    </div>
+                    <div class="market-cell">
+                        <strong>04</strong>
+                        <span>Проверка утверждений</span>
+                    </div>
+                </div>
+            </section>
+
+            <section class="card editorial-card">
+                <p class="kicker">Start</p>
+                <h2>Как начать</h2>
+                <div class="step-list">
+                    <div class="step">
+                        <strong>Создайте аккаунт</strong>
+                        <span>После входа откроется рабочий кабинет с портфелями и новостной базой.</span>
+                    </div>
+                    <div class="step">
+                        <strong>Добавьте тикеры</strong>
+                        <span>Укажите активы, по которым хотите получать релевантные новости.</span>
+                    </div>
+                    <div class="step">
+                        <strong>Запустите анализ</strong>
+                        <span>Система покажет компактные карточки с выводами и доказательной базой.</span>
+                    </div>
+                </div>
+            </section>
+        </aside>
+    </section>
+{% endblock %}

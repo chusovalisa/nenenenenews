@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}Вход{% endblock %}
+
+{% block content %}
+    <section class="auth-shell">
+        <article class="card auth-side">
+            <p class="kicker">Sign In</p>
+            <h1>Вернуться к своему потоку новостей</h1>
+            <p>После входа можно обновить базу, открыть портфель и сразу запустить анализ по текущим рыночным публикациям.</p>
+            <div class="market-grid" style="margin-top: 20px;">
+                <div class="market-cell">
+                    <strong>RSS</strong>
+                    <span>официальные источники</span>
+                </div>
+                <div class="market-cell">
+                    <strong>RAG</strong>
+                    <span>поиск по эмбеддингам</span>
+                </div>
+                <div class="market-cell">
+                    <strong>LLM</strong>
+                    <span>короткие сводки</span>
+                </div>
+                <div class="market-cell">
+                    <strong>Check</strong>
+                    <span>подтверждение claims</span>
+                </div>
+            </div>
+        </article>
+
+        <article class="card auth-form-card">
+            <p class="kicker">Auth</p>
+            <h2>Вход</h2>
+            <p class="muted">Введите данные аккаунта, чтобы открыть кабинет.</p>
+            <form method="post">
+                {% csrf_token %}
+                {% for field in form %}
+                    <label>
+                        {{ field.label }}
+                        {{ field }}
+                        {% for error in field.errors %}
+                            <span style="color: var(--red);">{{ error }}</span>
+                        {% endfor %}
+                    </label>
+                {% endfor %}
+                {% if form.non_field_errors %}
+                    {% for error in form.non_field_errors %}
+                        <div class="message error">{{ error }}</div>
+                    {% endfor %}
+                {% endif %}
+                <button class="button-primary" type="submit">Войти</button>
+            </form>
+            <div class="auth-actions">
+                <span class="muted">Нет аккаунта?</span>
+                <a class="button button-link" href="{% url 'ui-signup' %}">Регистрация</a>
+            </div>
+        </article>
+    </section>
+{% endblock %}

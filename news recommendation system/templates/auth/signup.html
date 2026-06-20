@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}Регистрация{% endblock %}
+
+{% block content %}
+    <section class="auth-shell">
+        <article class="card auth-side">
+            <p class="kicker">Registration</p>
+            <h1>Соберите свой рабочий контур для анализа новостей</h1>
+            <p>После регистрации можно добавлять активы, собирать портфели и запускать персонализированный дайджест вместо общего новостного шума.</p>
+            <div class="editorial-list" style="margin-top: 22px;">
+                <div class="editorial-item" style="background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.12);">
+                    <strong style="color: #f7f2e8;">Персональный кабинет</strong>
+                    <div style="color: #e6ddd0;">Отдельные портфели, позиции и история запусков.</div>
+                </div>
+                <div class="editorial-item" style="background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.12);">
+                    <strong style="color: #f7f2e8;">Короткие выводы</strong>
+                    <div style="color: #e6ddd0;">Карточки с влиянием новости на состав портфеля.</div>
+                </div>
+                <div class="editorial-item" style="background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.12);">
+                    <strong style="color: #f7f2e8;">Доказательная база</strong>
+                    <div style="color: #e6ddd0;">Ссылки и фрагменты, на которых основан итоговый ответ.</div>
+                </div>
+            </div>
+        </article>
+
+        <article class="card auth-form-card">
+            <p class="kicker">Auth</p>
+            <h2>Регистрация</h2>
+            <p class="muted">Создайте аккаунт, чтобы работать с портфелями и дайджестами внутри приложения.</p>
+            <form method="post">
+                {% csrf_token %}
+                {% for field in form %}
+                    <label>
+                        {{ field.label }}
+                        {{ field }}
+                        {% for error in field.errors %}
+                            <span style="color: var(--red);">{{ error }}</span>
+                        {% endfor %}
+                    </label>
+                {% endfor %}
+                {% if form.non_field_errors %}
+                    {% for error in form.non_field_errors %}
+                        <div class="message error">{{ error }}</div>
+                    {% endfor %}
+                {% endif %}
+                <button class="button-primary" type="submit">Создать аккаунт</button>
+            </form>
+            <div class="auth-actions">
+                <span class="muted">Уже зарегистрированы?</span>
+                <a class="button button-link" href="{% url 'ui-login' %}">Войти</a>
+            </div>
+        </article>
+    </section>
+{% endblock %}

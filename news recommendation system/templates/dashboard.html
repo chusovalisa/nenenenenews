@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block title %}Дашборд{% endblock %}
+
+{% block content %}
+    <section class="card hero">
+        <p class="kicker">Control Center</p>
+        <h1>Рабочее место для подбора новостей под портфель</h1>
+        <p>
+            Сначала обновите новостную базу, затем создайте активы и портфель.
+            После этого можно запускать анализ и получать компактные сводки с фактчекингом.
+        </p>
+        <div class="hero-actions">
+            <form
+                action="{% url 'ui-ingest-news' %}"
+                method="post"
+                data-loading-title="Обновляем новостную базу"
+                data-loading-text="Система загружает RSS-ленты, сохраняет статьи, строит чанки и индексы. Это может занять до нескольких минут."
+            >
+                {% csrf_token %}
+                <label>
+                    За сколько дней брать новости
+                    <input type="number" name="lookback_days" min="1" max="365" value="1">
+                </label>
+                <button class="button-warm" type="submit">Обновить новости</button>
+            </form>
+            <a class="button button-link" href="#portfolios">К портфелям</a>
+
+        </div>
+        <div class="stats" style="margin-top: 22px;">
+            <div class="stat">
+                <span>Активов</span>
+                <strong>{{ asset_count }}</strong>
+            </div>
+            <div class="stat">
+                <span>Источников</span>
+                <strong>{{ source_count }}</strong>
+            </div>
+            <div class="stat">
+                <span>Статей</span>
+                <strong>{{ article_count }}</strong>
+            </div>
+        </div>
+    </section>
+
+    <section class="layout-main" style="margin-top: 20px;">
+        <article class="card">
+            <div class="section-head" id="portfolios">
+                <div>
+                    <p class="kicker">Portfolios</p>
+                    <h2>Портфели</h2>
+                </div>
+            </div>
+            {% if portfolios %}
+                <div class="portfolio-list">
+                    {% for portfolio in portfolios %}
+                        <div class="portfolio-tile">
+                            <div class="section-head" style="margin-bottom: 0;">
+                                <h3 style="margin-bottom: 0;"><a href="{% url 'ui-portfolio-detail' portfolio.id %}">{{ portfolio.name }}</a></h3>
+                                <form action="{% url 'ui-portfolio-delete' portfolio.id %}" method="post" onsubmit="return confirm('Удалить портфель {{ portfolio.name }}?');">
+                                    {% csrf_token %}
+                                    <button type="submit">Удалить</button>
+                                </form>
+                            </div>
+                            <div class="meta">
+                                <span class="badge">{{ portfolio.base_currency }}</span>
+                                <span class="badge">{{ portfolio.risk_profile }}</span>
+                                <span class="badge">Позиций: {{ portfolio.positions.count }}</span>
+                            </div>
+                            <span class="muted"><a href="{% url 'ui-portfolio-detail' portfolio.id %}">Открыть портфель и запустить анализ</a></span>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty">Пока нет ни одного портфеля. Создайте первый справа.</div>
+            {% endif %}
+        </article>
+
+        <article class="card">
+            <div class="surface">
+                <h3>Создать портфель</h3>
+                <form action="{% url 'ui-portfolio-create' %}" method="post">
+                    {% csrf_token %}
+                    {% for field in portfolio_form %}
+                        <label>
+                            {{ field.label }}
+                            {{ field }}
+                            {% if field.help_text %}
+                                <span>{{ field.help_text }}</span>
+                            {% endif %}
+                            {% for error in field.errors %}
+                                <span style="color: var(--red);">{{ error }}</span>
+                            {% endfor %}
+                        </label>
+                    {% endfor %}
+                    <button class="button-primary" type="submit">Создать портфель</button>
+                </form>
+            </div>
+        </article>
+    </section>
+
+{% endblock %}
